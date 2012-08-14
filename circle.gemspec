@@ -4,8 +4,8 @@ require File.expand_path('../lib/circle/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Robert Rouse"]
   gem.email         = ["robert@theymaybecoders.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Gem for maintaining friendships in ActiveRecord}
+  gem.summary       = %q{Gem for maintaining friendships in ActiveRecord}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($\)

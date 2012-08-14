@@ -16,6 +16,8 @@ class Circle::Friendship < ActiveRecord::Base
   FRIENDSHIP_REQUESTED = "requested"
   FRIENDSHIP_DENIED = "denied"
 
+  attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at
+
   scope :pending, conditions: {status: FRIENDSHIP_PENDING}
   scope :accepted, conditions: {status: FRIENDSHIP_ACCEPTED}
   scope :requested, conditions: {status: FRIENDSHIP_REQUESTED}
@@ -27,6 +29,7 @@ class Circle::Friendship < ActiveRecord::Base
   after_destroy do |f|
     User.decrement_counter(:friends_count, f.user_id) if f.status == FRIENDSHIP_ACCEPTED
   end
+
 
   def pending?
     status == FRIENDSHIP_PENDING

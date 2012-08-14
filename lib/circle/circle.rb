@@ -24,7 +24,7 @@ module Circle
       return nil, Circle::Friendship::STATUS_FRIEND_IS_REQUIRED unless friend
       return nil, Circle::Friendship::STATUS_FRIEND_IS_YOURSELF if self.id == friend.id
       return nil, Circle::Friendship::STATUS_ALREADY_FRIENDS if friends?(friend)
-      return nil, Circle::Friendship::STATUS_CANNOT_SEND unless can_send? rescue nil
+      return nil, Circle::Friendship::STATUS_CANNOT_SEND unless can_send_friend_request? rescue nil
 
       friendship = self.friendship_with(friend)
       request = friend.friendship_with(self)
@@ -32,7 +32,7 @@ module Circle
       return nil, Circle::Friendship::STATUS_ALREADY_REQUESTED if friendship && friendship.requested?
 
       if friendship && friendship.pending?
-        return nil, Circle::Friendship::STATUS_CANNOT_ACCEPT unless can_accept? && friend.can_accept? rescue nil
+        return nil, Circle::Friendship::STATUS_CANNOT_ACCEPT unless can_accept_friend_request? && friend.can_accept_friend_request? rescue nil
 
         ActiveRecord::Base.transaction do
           friendship.accept!
@@ -68,7 +68,7 @@ module Circle
     end
 
     def accept_request(friend)
-      return nil, Circle::Friendship::STATUS_CANNOT_ACCEPT unless can_accept? rescue nil
+      return nil, Circle::Friendship::STATUS_CANNOT_ACCEPT unless can_accept_friend_request? rescue nil
       friendship = self.friendship_with(friend)
       if friendship.try(:pending?)
         requested = friend.friendship_with(self)
