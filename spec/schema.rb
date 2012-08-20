@@ -13,7 +13,12 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :friendships do |t|
     t.references :user, :friend
     t.string :status
-    t.datetime :requested_at, :accepted_at, :denied_at
+    t.datetime :requested_at, :accepted_at, :denied_at, :blocked_at
+    t.timestamps
+  end
+
+  create_table :blocked_users, :force => true do |t|
+    t.references :user, :blocked_user
     t.timestamps
   end
 end

@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'models', 'friendship')
+require File.join(File.dirname(__FILE__), 'models', 'blocked_user')
 
 
 module Circle
@@ -13,7 +14,8 @@ module Circle
       has_many :friendships, class_name: "Circle::Friendship"
       has_many :friends, through: :friendships, source: :friend, conditions: "friendships.status = 'accepted'"
       has_many :friendship_requests, class_name: "Circle::Friendship", foreign_key: :friend_id, conditions: "friendships.status = 'requested'"
-
+      has_many :users_blocked, class_name: "Circle::BlockedUser"
+      has_many :blocked_users, through: :users_blocked, source: :blocked_user
       after_destroy :destroy_all_friendships
     end
   end
@@ -24,6 +26,7 @@ module Circle
       return nil, Circle::Friendship::STATUS_FRIEND_IS_REQUIRED unless friend
       return nil, Circle::Friendship::STATUS_FRIEND_IS_YOURSELF if self.id == friend.id
       return nil, Circle::Friendship::STATUS_ALREADY_FRIENDS if friends?(friend)
+      return nil, Circle::Friendship::STATUS_BLOCKED if friend.blocked?(self) || blocked?(friend)
       return nil, Circle::Friendship::STATUS_CANNOT_SEND unless can_send_friend_request? rescue nil
 
       friendship = self.friendship_with(friend)
@@ -42,9 +45,14 @@ module Circle
         return friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
       end
 
-      ActiveRecord::Base.transaction do
-        friendship = self.friendships.create(friend_id: friend.id, status: 'requested', requested_at: Time.now)
-        request = friend.friendships.create(friend_id: id, status: 'pending', requested_at: Time.now)
+      if friendship && (friendship.denied? || friendship.blocked?)
+        friendship.update_attributes({status: 'requested', requested_at: Time.now})
+        request.update_attributes({status: 'pending', requested_at: Time.now})
+      else
+        ActiveRecord::Base.transaction do
+          friendship = self.friendships.create(friend_id: friend.id, status: 'requested', requested_at: Time.now)
+          request = friend.friendships.create(friend_id: id, status: 'pending', requested_at: Time.now)
+        end
       end
 
       return friendship, Circle::Friendship::STATUS_REQUESTED
@@ -57,6 +65,10 @@ module Circle
     def friends?(friend)
       friendship = friendship_with(friend)
       !!(friendship && friendship.accepted?)
+    end
+
+    def blocked?(friend)
+      !!users_blocked.where(blocked_user_id: friend).first
     end
 
     def unfriend(friend)
@@ -94,6 +106,33 @@ module Circle
         end
         request.reload
         return request, Circle::Friendship::STATUS_FRIENDSHIP_DENIED
+      else
+        return nil, Circle::Friendship::STATUS_NOT_FOUND
+      end
+    end
+
+    def block(friend)
+      request = friendship_with(friend)
+      if request
+        ActiveRecord::Base.transaction do
+            request.block!(true)
+            friend.friendship_with(self).try(:block!)
+        end
+        request.reload
+        return request, Circle::Friendship::STATUS_BLOCKED
+      else
+        return nil, Circle::Friendship::STATUS_NOT_FOUND
+      end
+    end
+
+    def unblock(friend)
+      blocked_user = self.users_blocked.where(blocked_user_id: friend.id).first
+
+      if blocked_user
+        ActiveRecord::Base.transaction do
+          blocked_user.destroy
+        end
+        return nil, Circle::Friendship::STATUS_UNBLOCKED
       else
         return nil, Circle::Friendship::STATUS_NOT_FOUND
       end

@@ -36,6 +36,13 @@ describe Circle::Friendship do
       end
     end
 
+    describe 'blocked?' do
+      it 'should have a blocked status' do
+        @friendship = Circle::Friendship.new(:status => 'blocked')
+        @friendship.should be_blocked
+      end
+    end
+
   end
 
   describe 'accept!' do
@@ -62,6 +69,28 @@ describe Circle::Friendship do
       @friendship = Circle::Friendship.new(:status => 'pending')
       @friendship.deny!
       @friendship.status.should == Circle::Friendship::FRIENDSHIP_DENIED
+    end
+  end
+
+  describe 'block!' do
+    it 'should set the status to blocked' do
+      @friendship = Circle::Friendship.new(:status => 'pending')
+      @friendship.block!
+      @friendship.status.should == Circle::Friendship::FRIENDSHIP_BLOCKED
+    end
+
+    it 'should create a blocked user when passed true' do
+      @bill = Fabricate(:user, login: 'Bill')
+      @charles = Fabricate(:user, login: 'charles')
+
+      @bill.befriend(@charles)
+      @charles.block(@bill)
+
+      @bill.reload
+      @charles.reload
+
+      @bill.blocked_users.should be_empty
+      @charles.blocked_users.include?(@bill).should be_true
     end
   end
 end
