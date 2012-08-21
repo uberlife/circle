@@ -79,7 +79,7 @@ module Circle
       end
     end
 
-    def accept_request(friend)
+    def accept_friend_request(friend)
       return nil, Circle::Friendship::STATUS_CANNOT_ACCEPT unless can_accept_friend_request? rescue nil
       friendship = self.friendship_with(friend)
       if friendship.try(:pending?)
@@ -96,7 +96,7 @@ module Circle
       end
     end
 
-    def deny_request(friend)
+    def deny_friend_request(friend)
       request = friendship_with(friend)
       if request.try(:pending?)
         ActiveRecord::Base.transaction do
