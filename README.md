@@ -32,7 +32,7 @@ Call methods as needed
     mary = User.find_by_login 'mary'
     paul = User.find_by_login 'paul'
 
-    # John wants to be friend with Mary
+    # John wants to be friends with Mary
     # always return a friendship object
     john.befriend(mary)
 
