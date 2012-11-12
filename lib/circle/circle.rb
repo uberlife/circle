@@ -18,6 +18,15 @@ module Circle
       has_many :blocked_users, through: :users_blocked, source: :blocked_user
       after_destroy :destroy_all_friendships
     end
+
+		def after_friendship_request method
+			ClassMethods.instance_variable_set :@after_friendship_request_callback, method
+		end
+
+		def after_friendship_accepted method
+			ClassMethods.instance_variable_set :@after_friendship_accepted_callback, method
+		end
+
   end
 
   module InstanceMethods
@@ -55,7 +64,11 @@ module Circle
         end
       end
 
-      return friendship, Circle::Friendship::STATUS_REQUESTED
+      status = friendship, Circle::Friendship::STATUS_REQUESTED
+			callback_method = ClassMethods.instance_variable_get :@after_friendship_request_callback
+			self.send(callback_method, status) unless callback_method.nil?
+
+			return status
     end
 
     def friendship_with(friend)
@@ -90,9 +103,13 @@ module Circle
           requested.accept! unless requested.accepted?
         end
 
-        return friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
+			  status = friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
+				callback_method = ClassMethods.instance_variable_get :@after_friendship_accepted_callback
+				self.send(callback_method, status) unless callback_method.nil?
+      
+				status
       else
-        return nil, Circle::Friendship::STATUS_NOT_FOUND
+        [nil, Circle::Friendship::STATUS_NOT_FOUND]
       end
     end
 
