@@ -98,6 +98,26 @@ Call methods as needed
       end
     end
 
+## Callbacks
+
+Cirlce gem also provides some callbacks; callbacks can be used to execute logic after circle action was made.
+
+    class User < ActiveRecord::Base
+      has_circle
+    	
+			after_friendship_request :do_this_after_request
+			after_friendship_accepted: do_this_after_accept
+
+			def do_this_after_request, status
+				...
+			end
+
+			def do_this_after_accept, status
+				...
+			end
+			
+		end
+
 ## Future
 
 1. Add Google+ style circles
