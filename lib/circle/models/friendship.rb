@@ -81,3 +81,21 @@ class Circle::Friendship < ActiveRecord::Base
   end
 
 end
+
+class Array
+  def circle_statuses
+    @circle_statuses ||= Circle::Friendship::constants.select do |i|
+      i.to_s =~ /status/i
+    end.map {|s| s.downcase.to_s.gsub /status_/,"" }
+  end
+
+  def method_missing method_name, *args, &block
+    if circle_statuses.include?(method_name.to_s.downcase.match(/(\w+)\?/)[1])
+      const_name = "status_#{Regexp.last_match[1]}".upcase
+      const_value = Circle::Friendship.const_get const_name
+      return self.last == const_value
+    end
+
+    super
+  end
+end

@@ -23,15 +23,14 @@ describe 'Circle' do
 
       it 'should not allow sending of requests if the user cannot send' do
         @bill.stub(:can_send_friend_request?) {false}
-        friendship, status = @bill.befriend(@charles)
+        friendship, status = stat = @bill.befriend(@charles)
+        stat.should be_cannot_send
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_CANNOT_SEND
       end
 
       it 'should not fail if can_send_friend_request? is undefined' do
-        friendship, status = @bill.befriend(@charles)
-        friendship.should_not be_nil
-        status.should == Circle::Friendship::STATUS_REQUESTED
+        @bill.befriend(@charles).should be_requested
       end
 
       it 'should create a friendship when each user befriends one another' do
@@ -65,6 +64,8 @@ describe 'Circle' do
         friendship, status = @bill.befriend(@charles)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_ALREADY_FRIENDS
+
+        [friendship, status].should be_already_friends
       end
 
       it 'should return an error status when the request has already been made' do |variable|
@@ -73,20 +74,25 @@ describe 'Circle' do
         friendship, status = @bill.befriend(@charles)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_ALREADY_REQUESTED
+
+        [friendship,status].should be_already_requested
       end
 
       it 'should re-request a friendship if the user is not blocked' do
-        friendship, status = @bill.befriend(@charles)
+        friendship, status = stat = @bill.befriend(@charles)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_REQUESTED
+        stat.should be_requested
 
-        friendship, status = @charles.deny_friend_request(@bill)
+        friendship, status = stat = @charles.deny_friend_request(@bill)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_FRIENDSHIP_DENIED
+        stat.should be_friendship_denied
 
-        friendship, status = @bill.befriend(@charles)
+        friendship, status = stat = @bill.befriend(@charles)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_REQUESTED
+        stat.should be_requested
       end
 
     end
@@ -106,24 +112,27 @@ describe 'Circle' do
       it 'should not create a friendship when the user attempts to accept if the user cannot accept' do
         @bill.befriend(@charles)
         @charles.stub(:can_accept_friend_request?) {false}
-        friendship, status = @charles.accept_friend_request(@bill)
+        friendship, status = stat = @charles.accept_friend_request(@bill)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_CANNOT_ACCEPT
+        stat.should be_cannot_accept
       end
 
       it 'should return a not found status if the request does not exist' do
-        friendship, status = @bill.accept_friend_request(@charles)
+        friendship, status = stat = @bill.accept_friend_request(@charles)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_NOT_FOUND
+        stat.should be_not_found
       end
     end
 
     describe "denying a request" do
       it 'should return the friendship object and a denied status' do
         @bill.befriend(@charles)
-        friendship, status = @charles.deny_friend_request(@bill)
+        friendship, status = stat = @charles.deny_friend_request(@bill)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_FRIENDSHIP_DENIED
+        stat.should be_friendship_denied
       end
 
       it 'should update the friendship object with a denied status' do
@@ -134,9 +143,10 @@ describe 'Circle' do
       end
 
       it 'should return a not found status if the request does not exist' do
-        friendship, status = @bill.deny_friend_request(@charles)
+        friendship, status = stat = @bill.deny_friend_request(@charles)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_NOT_FOUND
+        stat.should be_not_found
       end
     end
 
@@ -224,24 +234,27 @@ describe 'Circle' do
       end
 
       it 'should not allow friend requests to be sent anymore' do
-        friendship, status = @bill.befriend(@charles)
+        friendship, status = stat = @bill.befriend(@charles)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_BLOCKED
+        stat.should be_blocked
       end
 
       it 'should not allow you to send requests to users that have blocked you' do
         Circle::BlockedUser.destroy_all
         @bill.block(@charles)
-        friendship, status = @charles.befriend(@bill)
+        friendship, status = stat = @charles.befriend(@bill)
         friendship.should be_nil
         status.should == Circle::Friendship::STATUS_BLOCKED
+        stat.should be_blocked
       end
 
       it 'should allow a user to request a friendship with a user they have previously blocked' do
         @charles.unblock(@bill)
-        friendship, status = @charles.befriend(@bill)
+        friendship, status = stat = @charles.befriend(@bill)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_REQUESTED
+        stat.should be_requested
       end
     end
 

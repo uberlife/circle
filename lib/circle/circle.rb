@@ -65,8 +65,8 @@ module Circle
       end
 
       status = friendship, Circle::Friendship::STATUS_REQUESTED
-			callback_method = ClassMethods.instance_variable_get :@after_friendship_request_callback
-			self.send(callback_method, status) unless callback_method.nil?
+      callback_method = ClassMethods.instance_variable_get :@after_friendship_request_callback
+      self.send(callback_method, status) unless callback_method.nil?
 
 			return status
     end
@@ -103,10 +103,10 @@ module Circle
           requested.accept! unless requested.accepted?
         end
 
-			  status = friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
-				callback_method = ClassMethods.instance_variable_get :@after_friendship_accepted_callback
-				self.send(callback_method, status) unless callback_method.nil?
-      
+        status = friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
+        callback_method = ClassMethods.instance_variable_get :@after_friendship_accepted_callback
+        self.send(callback_method, status) unless callback_method.nil?
+
 				status
       else
         [nil, Circle::Friendship::STATUS_NOT_FOUND]
