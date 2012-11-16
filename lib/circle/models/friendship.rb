@@ -98,8 +98,10 @@ class Array
       end
     rescue Exception => e
       # handle this. in some strange cases it brakes.
+
+      super method_name, *args, &block
     end
 
-    super
+    super method_name, *args, &block
   end
 end
