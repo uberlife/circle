@@ -90,10 +90,14 @@ class Array
   end
 
   def method_missing method_name, *args, &block
-    if circle_statuses.include?(method_name.to_s.downcase.match(/(\w+)\?/)[1])
-      const_name = "status_#{Regexp.last_match[1]}".upcase
-      const_value = Circle::Friendship.const_get const_name
-      return self.last == const_value
+    begin
+      if circle_statuses.include?(method_name.to_s.downcase.match(/(\w+)\?/)[1])
+        const_name = "status_#{Regexp.last_match[1]}".upcase
+        const_value = Circle::Friendship.const_get const_name
+        return self.last == const_value
+      end
+    rescue Exception => e
+      # handle this. in some strange cases it brakes.
     end
 
     super
