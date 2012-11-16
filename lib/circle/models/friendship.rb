@@ -85,7 +85,7 @@ end
 class Array
   def circle_statuses
     @circle_statuses ||= Circle::Friendship::constants.select do |i|
-      i.to_s =~ /status/i
+      i.to_s =~ /STATUS/
     end.map {|s| s.downcase.to_s.gsub /status_/,"" }
   end
 
