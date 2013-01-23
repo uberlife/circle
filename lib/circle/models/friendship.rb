@@ -51,7 +51,7 @@ class Circle::Friendship < ActiveRecord::Base
   end
 
   def blocked_at
-    user.blocked_user_info.where(blocked_user_id: friend.id).first.created_at
+    user.blocked_user_info.where(blocked_user_id: friend.id).first.try(:created_at)
   end
 
   def blocked?
