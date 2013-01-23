@@ -19,13 +19,12 @@ class Circle::Friendship < ActiveRecord::Base
   FRIENDSHIP_DENIED = "denied"
   FRIENDSHIP_BLOCKED = "blocked"
 
-  attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at, :blocked_at
+  attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at
 
   scope :pending, where(status: FRIENDSHIP_PENDING)
   scope :accepted, where(status: FRIENDSHIP_ACCEPTED)
   scope :requested, where(status: FRIENDSHIP_REQUESTED)
   scope :denied, where(status: FRIENDSHIP_DENIED)
-  scope :blocked, where(status: FRIENDSHIP_BLOCKED)
 
   belongs_to :user
   belongs_to :friend, class_name: 'User', foreign_key: 'friend_id'
@@ -51,8 +50,12 @@ class Circle::Friendship < ActiveRecord::Base
     status == FRIENDSHIP_DENIED
   end
 
+  def blocked_at
+    user.blocked_user_info.where(blocked_user_id: friend.id).first.created_at
+  end
+
   def blocked?
-    status == FRIENDSHIP_BLOCKED
+    user.has_blocked?(friend)
   end
 
   def accept!
@@ -71,15 +74,6 @@ class Circle::Friendship < ActiveRecord::Base
       update_attribute(:denied_at, Time.now)
     end
   end
-
-  def block!(add_to_block_list = false)
-    self.transaction do
-      update_attribute(:status, Circle::Friendship::FRIENDSHIP_BLOCKED)
-      update_attribute(:blocked_at, Time.now)
-      self.user.users_blocked.create(blocked_user_id: self.friend.id) if add_to_block_list
-    end
-  end
-
 end
 
 class Array

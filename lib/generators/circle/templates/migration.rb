@@ -2,7 +2,7 @@ class CreateCircleTables < ActiveRecord::Migration
   def self.up
     create_table :friendships, :force => true do |t|
       t.references :user, :friend
-      t.datetime :requested_at, :accepted_at, :denied_at, :blocked_at
+      t.datetime :requested_at, :accepted_at, :denied_at
       t.string :status
       t.timestamps
     end

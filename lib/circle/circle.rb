@@ -14,8 +14,8 @@ module Circle
       has_many :friendships, class_name: "Circle::Friendship"
       has_many :friends, through: :friendships, source: :friend, conditions: "friendships.status = 'accepted'"
       has_many :friendship_requests, class_name: "Circle::Friendship", foreign_key: :friend_id, conditions: "friendships.status = 'requested'"
-      has_many :users_blocked, class_name: "Circle::BlockedUser"
-      has_many :blocked_users, through: :users_blocked, source: :blocked_user
+      has_many :blocked_user_info, class_name: "Circle::BlockedUser"
+      has_many :blocked_users, through: :blocked_user_info, source: :blocked_user
       after_destroy :destroy_all_friendships
     end
 
@@ -34,8 +34,9 @@ module Circle
     def befriend(friend)
       return nil, Circle::Friendship::STATUS_FRIEND_IS_REQUIRED unless friend
       return nil, Circle::Friendship::STATUS_FRIEND_IS_YOURSELF if self.id == friend.id
+      unblock(friend)
       return nil, Circle::Friendship::STATUS_ALREADY_FRIENDS if friends?(friend)
-      return nil, Circle::Friendship::STATUS_BLOCKED if friend.blocked?(self) || blocked?(friend)
+      return nil, Circle::Friendship::STATUS_REQUESTED if am_blocked_by?(friend) # don't let user know he's blocked
       return nil, Circle::Friendship::STATUS_CANNOT_SEND unless can_send_friend_request? rescue nil
 
       friendship = self.friendship_with(friend)
@@ -54,7 +55,7 @@ module Circle
         return friendship, Circle::Friendship::STATUS_FRIENDSHIP_ACCEPTED
       end
 
-      if friendship && (friendship.denied? || friendship.blocked?)
+      if friendship
         friendship.update_attributes({status: 'requested', requested_at: Time.now})
         request.update_attributes({status: 'pending', requested_at: Time.now})
       else
@@ -80,8 +81,13 @@ module Circle
       !!(friendship && friendship.accepted?)
     end
 
-    def blocked?(friend)
-      !!users_blocked.where(blocked_user_id: friend).first
+    def has_blocked?(friend)
+      blocked_user_info.where(blocked_user_id: friend).count > 0
+    end
+    alias_method :have_blocked?, :has_blocked?
+
+    def am_blocked_by?(friend)
+      friend.has_blocked?(self)
     end
 
     def unfriend(friend)
@@ -129,30 +135,22 @@ module Circle
     end
 
     def block(friend)
-      request = friendship_with(friend)
-      if request
-        ActiveRecord::Base.transaction do
-            request.block!(true)
-            friend.friendship_with(self).try(:block!)
-        end
-        request.reload
-        return request, Circle::Friendship::STATUS_BLOCKED
-      else
-        return nil, Circle::Friendship::STATUS_NOT_FOUND
+      return nil, Circle::Friendship::STATUS_NOT_FOUND if friend.blank?
+      return nil, Circle::Friendship::STATUS_FRIEND_IS_YOURSELF if id == friend.id
+      ActiveRecord::Base.transaction do
+        blocked_user_info.create(blocked_user_id: friend.id) unless have_blocked?(friend)
       end
+      [friendship_with(friend), Circle::Friendship::STATUS_BLOCKED]
     end
 
     def unblock(friend)
-      blocked_user = self.users_blocked.where(blocked_user_id: friend.id).first
+      return nil, Circle::Friendship::STATUS_NOT_FOUND unless have_blocked?(friend)
 
-      if blocked_user
-        ActiveRecord::Base.transaction do
-          blocked_user.destroy
-        end
-        return nil, Circle::Friendship::STATUS_UNBLOCKED
-      else
-        return nil, Circle::Friendship::STATUS_NOT_FOUND
+      ActiveRecord::Base.transaction do
+        blocked_user_info.where(blocked_user_id: friend.id).destroy_all
       end
+
+      [nil, Circle::Friendship::STATUS_UNBLOCKED]
     end
 
     private

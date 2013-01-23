@@ -224,37 +224,34 @@ describe 'Circle' do
 
     describe 'blocking' do
       before(:each) do
-        @bill.befriend(@charles)
         @charles.block(@bill)
       end
 
       it 'should block a user' do
         @bill.blocked_users.should be_empty
-        @charles.blocked_users.include?(@bill).should be_true
+        @charles.blocked_users.should include @bill
       end
 
-      it 'should not allow friend requests to be sent anymore' do
-        friendship, status = stat = @bill.befriend(@charles)
+      it 'should allow friend requests to be sent, but they should not really be created' do
+        friendship, status = @bill.befriend(@charles)
         friendship.should be_nil
-        status.should == Circle::Friendship::STATUS_BLOCKED
-        stat.should be_blocked
-      end
-
-      it 'should not allow you to send requests to users that have blocked you' do
-        Circle::BlockedUser.destroy_all
-        @bill.block(@charles)
-        friendship, status = stat = @charles.befriend(@bill)
-        friendship.should be_nil
-        status.should == Circle::Friendship::STATUS_BLOCKED
-        stat.should be_blocked
+        status.should == Circle::Friendship::STATUS_REQUESTED
+        @bill.friendship_with(@charles).should be_nil
       end
 
       it 'should allow a user to request a friendship with a user they have previously blocked' do
         @charles.unblock(@bill)
-        friendship, status = stat = @charles.befriend(@bill)
+        friendship, status = @charles.befriend(@bill)
         friendship.should_not be_nil
         status.should == Circle::Friendship::STATUS_REQUESTED
-        stat.should be_requested
+        @charles.friendship_with(@bill).should be_present
+      end
+
+      it 'should unblock user if a friendship request is sent from the user who has him blocked' do
+        friendship, status = @charles.befriend(@bill)
+        @charles.blocked_users.should be_empty
+        status.should == Circle::Friendship::STATUS_REQUESTED
+        @charles.friendship_with(@bill).should be_present
       end
     end
 

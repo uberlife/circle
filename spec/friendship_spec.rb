@@ -36,13 +36,6 @@ describe Circle::Friendship do
       end
     end
 
-    describe 'blocked?' do
-      it 'should have a blocked status' do
-        @friendship = Circle::Friendship.new(:status => 'blocked')
-        @friendship.should be_blocked
-      end
-    end
-
   end
 
   describe 'accept!' do
@@ -72,25 +65,32 @@ describe Circle::Friendship do
     end
   end
 
-  describe 'block!' do
-    it 'should set the status to blocked' do
-      @friendship = Circle::Friendship.new(:status => 'pending')
-      @friendship.block!
-      @friendship.status.should == Circle::Friendship::FRIENDSHIP_BLOCKED
+  describe 'block' do
+    let(:friend) { mock('Friend', id: 1337, to_param: 1337) }
+    let(:friendship) { Circle::Friendship.new.tap { |fs| fs.stub(:friend).and_return(friend) } }
+
+    it 'should get blocked_at from the user\'s blocked users association' do
+      mock_user = mock('User')
+      mock_blocked_users = mock('BlockedUsers')
+      mock_created_at = mock('DateTime')
+      mock_result = mock('BlockedUser', created_at: mock_created_at)
+      mock_results = [mock_result]
+
+      friendship.should_receive(:user).and_return(mock_user)
+      mock_user.should_receive(:blocked_user_info).and_return(mock_blocked_users)
+      mock_blocked_users.should_receive(:where).with(blocked_user_id: friend.id).and_return(mock_results)
+
+      friendship.blocked_at.should eq(mock_created_at)
     end
 
-    it 'should create a blocked user when passed true' do
-      @bill = Fabricate(:user, login: 'Bill')
-      @charles = Fabricate(:user, login: 'charles')
+    it 'should get blocked? from user' do
+      mock_blocked = mock('Boolean')
+      mock_user = mock('User')
 
-      @bill.befriend(@charles)
-      @charles.block(@bill)
+      mock_user.should_receive(:has_blocked?).with(friend).and_return(mock_blocked)
+      friendship.should_receive(:user).and_return(mock_user)
 
-      @bill.reload
-      @charles.reload
-
-      @bill.blocked_users.should be_empty
-      @charles.blocked_users.include?(@bill).should be_true
+      friendship.blocked?.should eq(mock_blocked)
     end
   end
 end
