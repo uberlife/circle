@@ -19,12 +19,12 @@ class Circle::Friendship < ActiveRecord::Base
   FRIENDSHIP_DENIED = "denied"
   FRIENDSHIP_BLOCKED = "blocked"
 
-  attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at
+  attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at if defined? Rails and (Rails.version < "4" or defined?(::ProtectedAttributes))
 
-  scope :pending, where(status: FRIENDSHIP_PENDING)
-  scope :accepted, where(status: FRIENDSHIP_ACCEPTED)
-  scope :requested, where(status: FRIENDSHIP_REQUESTED)
-  scope :denied, where(status: FRIENDSHIP_DENIED)
+  scope :pending, -> { where(status: FRIENDSHIP_PENDING) }
+  scope :accepted, -> { where(status: FRIENDSHIP_ACCEPTED) }
+  scope :requested, -> { where(status: FRIENDSHIP_REQUESTED) }
+  scope :denied, -> { where(status: FRIENDSHIP_DENIED) }
 
   belongs_to :user
   belongs_to :friend, class_name: 'User', foreign_key: 'friend_id'

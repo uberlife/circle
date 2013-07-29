@@ -66,14 +66,14 @@ describe Circle::Friendship do
   end
 
   describe 'block' do
-    let(:friend) { mock('Friend', id: 1337, to_param: 1337) }
+    let(:friend) { double('Friend', id: 1337, to_param: 1337) }
     let(:friendship) { Circle::Friendship.new.tap { |fs| fs.stub(:friend).and_return(friend) } }
 
     it 'should get blocked_at from the user\'s blocked users association' do
-      mock_user = mock('User')
-      mock_blocked_users = mock('BlockedUsers')
-      mock_created_at = mock('DateTime')
-      mock_result = mock('BlockedUser', created_at: mock_created_at)
+      mock_user = double('User')
+      mock_blocked_users = double('BlockedUsers')
+      mock_created_at = double('DateTime')
+      mock_result = double('BlockedUser', created_at: mock_created_at)
       mock_results = [mock_result]
 
       friendship.should_receive(:user).and_return(mock_user)
@@ -84,8 +84,8 @@ describe Circle::Friendship do
     end
 
     it 'should get blocked? from user' do
-      mock_blocked = mock('Boolean')
-      mock_user = mock('User')
+      mock_blocked = double('Boolean')
+      mock_user = double('User')
 
       mock_user.should_receive(:has_blocked?).with(friend).and_return(mock_blocked)
       friendship.should_receive(:user).and_return(mock_user)

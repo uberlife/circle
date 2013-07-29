@@ -12,8 +12,8 @@ module Circle
       include Circle::InstanceMethods
 
       has_many :friendships, class_name: "Circle::Friendship"
-      has_many :friends, through: :friendships, source: :friend, conditions: "friendships.status = 'accepted'"
-      has_many :friendship_requests, class_name: "Circle::Friendship", foreign_key: :friend_id, conditions: "friendships.status = 'requested'"
+      has_many :friends, -> { where "friendships.status = 'accepted'" }, through: :friendships, source: :friend
+      has_many :friendship_requests, -> { where "friendships.status = 'requested'" }, class_name: "Circle::Friendship", foreign_key: :friend_id
       has_many :blocked_user_info, class_name: "Circle::BlockedUser"
       has_many :blocked_users, through: :blocked_user_info, source: :blocked_user
       after_destroy :destroy_all_friendships

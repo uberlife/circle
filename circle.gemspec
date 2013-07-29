@@ -8,7 +8,7 @@ Gem::Specification.new do |gem|
   gem.summary       = %q{Gem for maintaining friendships in ActiveRecord}
   gem.homepage      = "https://github.com/theymaybecoders/circle"
 
-  gem.files         = `git ls-files`.split($\)
+  gem.files = Dir["{app,config,db,lib}/**/*"] + ["LICENSE", "Rakefile", "README.md"]
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "circle"
@@ -22,5 +22,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "simplecov"
 
-  gem.add_dependency "activerecord", '~> 3.0'
+  gem.add_dependency "activerecord", '~> 4.0.0'
 end
