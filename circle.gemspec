@@ -22,5 +22,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "simplecov"
 
-  gem.add_dependency "activerecord", '~> 4.0.0'
+  gem.add_dependency "activerecord", '~> 4'
 end
