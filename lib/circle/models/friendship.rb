@@ -1,5 +1,5 @@
 class Circle::Friendship < ActiveRecord::Base
-  self.table_name = "friendships"
+  self.table_name = 'friendships'
 
   STATUS_ALREADY_FRIENDS     = 1
   STATUS_ALREADY_REQUESTED   = 2
@@ -13,11 +13,11 @@ class Circle::Friendship < ActiveRecord::Base
   STATUS_BLOCKED             = 10
   STATUS_UNBLOCKED           = 11
 
-  FRIENDSHIP_ACCEPTED = "accepted"
-  FRIENDSHIP_PENDING = "pending"
-  FRIENDSHIP_REQUESTED = "requested"
-  FRIENDSHIP_DENIED = "denied"
-  FRIENDSHIP_BLOCKED = "blocked"
+  FRIENDSHIP_ACCEPTED = 'accepted'.freeze
+  FRIENDSHIP_PENDING = 'pending'.freeze
+  FRIENDSHIP_REQUESTED = 'requested'.freeze
+  FRIENDSHIP_DENIED = 'denied'.freeze
+  FRIENDSHIP_BLOCKED = 'blocked'.freeze
 
   attr_accessible :friend_id, :status, :requested_at, :accepted_at, :denied_at if defined? Rails and (Rails.version < "4" or defined?(::ProtectedAttributes))
 
@@ -33,6 +33,9 @@ class Circle::Friendship < ActiveRecord::Base
     User.decrement_counter(:friends_count, f.user_id) if f.status == FRIENDSHIP_ACCEPTED
   end
 
+  def self.check_statuses
+    %i(already_friends? already_requested? friend_is_yourself? friendship_accepted? friendship_denied? requested? cannot_send? cannot_accept? not_found? blocked? unblocked?).freeze
+  end
 
   def pending?
     status == FRIENDSHIP_PENDING
@@ -77,25 +80,9 @@ class Circle::Friendship < ActiveRecord::Base
 end
 
 class Array
-  def circle_statuses
-    @circle_statuses ||= Circle::Friendship::constants.select do |i|
-      i.to_s =~ /STATUS/
-    end.map {|s| s.downcase.to_s.gsub /status_/,"" }
-  end
-
-  def method_missing method_name, *args, &block
-    begin
-      if circle_statuses.include?(method_name.to_s.downcase.match(/(\w+)\?/)[1])
-        const_name = "status_#{Regexp.last_match[1]}".upcase
-        const_value = Circle::Friendship.const_get const_name
-        return self.last == const_value
-      end
-    rescue Exception => e
-      # handle this. in some strange cases it brakes.
-
-      super method_name, *args, &block
+  Circle::Friendship.check_statuses.each do |status|
+    define_method status do
+      last == Circle::Friendship.const_get("status_#{status}"[0..-2].upcase!)
     end
-
-    super method_name, *args, &block
   end
 end

@@ -155,13 +155,13 @@ describe 'Circle' do
         @bill.befriend(@charles)
         @charles.befriend(@bill)
 
-        @bill.friends.include?(@charles).should be_true
-        @charles.friends.include?(@bill).should be_true
+        @bill.friends.include?(@charles).should be_truthy
+        @charles.friends.include?(@bill).should be_truthy
 
         @bill.unfriend(@charles)
 
-        @bill.friends.include?(@charles).should be_false
-        @charles.friends.include?(@bill).should be_false
+        @bill.friends.include?(@charles).should be_falsey
+        @charles.friends.include?(@bill).should be_falsey
       end
 
       it 'should decrement the friends counter' do
